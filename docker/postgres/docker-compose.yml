@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: core-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_core_secure_password_here}
+      POSTGRES_DB: ${POSTGRES_DB:-homelab}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # Expose only to loopback for security. Use Tailscale/SSH tunnel to connect externally.
+      - "127.0.0.1:5432:5432"
+    networks:
+      - homelab-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-admin} -d $${POSTGRES_DB:-homelab}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+    name: pgdata_core
+
+networks:
+  homelab-net:
+    name: homelab-net
+    driver: bridge

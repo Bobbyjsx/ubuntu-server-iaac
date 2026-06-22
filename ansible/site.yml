@@ -1,0 +1,18 @@
+---
+- name: Provision Home Server Infrastructure
+  hosts: home_servers
+  become: true
+  gather_facts: true
+
+  vars:
+    # Default variables (can be overridden in group_vars or command line)
+    docker_base_dir: "/opt/docker"
+    target_user: "ubuntu"
+    tailscale_ssh: true
+    # tailscale_auth_key is required for unattended authentication
+
+  roles:
+    - role: base
+    - role: security
+    - role: docker
+    - role: tailscale

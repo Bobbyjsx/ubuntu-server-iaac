@@ -1,0 +1,19 @@
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    command: -H unix:///var/run/docker.sock
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    ports:
+      # Bind only to loopback to ensure access is only possible via Tailscale/local tunnel
+      - "127.0.0.1:9443:9443"
+      - "127.0.0.1:9000:9000"
+
+volumes:
+  portainer_data:
+    name: portainer_data

@@ -1,0 +1,48 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Upgrade all packages to their latest version
+  apt:
+    upgrade: safe
+
+- name: Install system utility packages
+  apt:
+    name:
+      - git
+      - curl
+      - wget
+      - unzip
+      - vim
+      - htop
+      - fail2ban
+      - ufw
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - software-properties-common
+      - python3-pip
+      - python3-docker
+    state: present
+
+- name: Create docker base directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0755'
+  loop:
+    - "{{ docker_base_dir }}"
+    - "{{ docker_base_dir }}/portainer"
+    - "{{ docker_base_dir }}/coolify"
+    - "{{ docker_base_dir }}/postgres"
+    - "{{ docker_base_dir }}/postgres/data"
+    - "{{ docker_base_dir }}/redis"
+    - "{{ docker_base_dir }}/redis/data"
+    - "{{ docker_base_dir }}/monitoring"
+    - "{{ docker_base_dir }}/monitoring/prometheus"
+    - "{{ docker_base_dir }}/monitoring/grafana"
+    - "{{ docker_base_dir }}/monitoring/grafana/data"
