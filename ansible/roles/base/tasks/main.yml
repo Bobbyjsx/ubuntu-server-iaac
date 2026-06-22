@@ -1,8 +1,14 @@
 ---
+- name: Remove broken CD-ROM apt source
+  file:
+    path: /etc/apt/sources.list.d/cdrom.sources
+    state: absent
+
 - name: Update apt cache
   apt:
     update_cache: yes
     cache_valid_time: 3600
+
 
 - name: Upgrade all packages to their latest version
   apt:

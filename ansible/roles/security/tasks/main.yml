@@ -36,6 +36,13 @@
       bantime = 1d
   notify: Restart fail2ban
 
+- name: Ensure fail2ban is started and enabled
+  service:
+    name: fail2ban
+    state: started
+    enabled: yes
+
+
 - name: Configure UFW default policies
   ufw:
     direction: "{{ item.direction }}"
@@ -49,13 +56,15 @@
     rule: allow
     port: "{{ ssh_port | default(22) }}"
     proto: tcp
-  comment: "Allow SSH bootstrap port"
+    comment: "Allow SSH bootstrap port"
 
 - name: Allow all traffic on Tailscale interface (tailscale0)
   ufw:
     rule: allow
     interface: tailscale0
-  comment: "Allow full trust on Tailscale interface"
+    direction: in
+    comment: "Allow full trust on Tailscale interface"
+
 
 - name: Enable UFW firewall
   ufw:

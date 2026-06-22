@@ -1,0 +1,10 @@
+# Environment configurations (sensitive)
+.env
+
+# Ansible retry files
+*.retry
+
+# OS/IDE temporary files
+.DS_Store
+.idea/
+.vscode/

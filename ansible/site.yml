@@ -7,9 +7,9 @@
   vars:
     # Default variables (can be overridden in group_vars or command line)
     docker_base_dir: "/opt/docker"
-    target_user: "ubuntu"
+    target_user: "{{ lookup('env', 'SERVER_USER') | default('ubuntu', true) }}"
     tailscale_ssh: true
-    # tailscale_auth_key is required for unattended authentication
+    tailscale_auth_key: "{{ lookup('env', 'TAILSCALE_AUTH_KEY') | default('', true) }}"
 
   roles:
     - role: base

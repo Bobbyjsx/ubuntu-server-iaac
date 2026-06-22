@@ -20,10 +20,15 @@
     mode: '0644'
 
 - name: Add Docker APT repository
-  apt_repository:
-    repo: "deb [arch={{ ansible_architecture if ansible_architecture == 'amd64' else 'arm64' }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+  deb822_repository:
+    name: docker
+    types: deb
+    uris: https://download.docker.com/linux/ubuntu
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: stable
+    architectures: "{{ 'amd64' if ansible_facts['architecture'] in ['x86_64', 'amd64'] else 'arm64' }}"
+    signed_by: /etc/apt/keyrings/docker.asc
     state: present
-    filename: docker
 
 - name: Install Docker CE and Compose plugin
   apt:
@@ -47,3 +52,66 @@
     name: "{{ target_user }}"
     groups: docker
     append: yes
+
+- name: Ensure Coolify directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0755'
+  loop:
+    - /data/coolify
+    - /data/coolify/source
+    - /data/coolify/ssh
+    - /data/coolify/applications
+    - /data/coolify/databases
+    - /data/coolify/services
+    - /data/coolify/backups
+
+- name: Check if Coolify .env exists
+  stat:
+    path: /data/coolify/source/.env
+  register: coolify_env_stat
+
+- name: Download and generate Coolify .env file
+  block:
+    - name: Download Coolify .env template
+      get_url:
+        url: https://cdn.coollabs.io/coolify/.env.production
+        dest: /data/coolify/source/.env
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: '0600'
+
+    - name: Generate random APP_ID
+      shell: sed -i "s|APP_ID=.*|APP_ID=$(openssl rand -hex 16)|g" /data/coolify/source/.env
+
+    - name: Generate random APP_KEY
+      shell: sed -i "s|APP_KEY=.*|APP_KEY=base64:$(openssl rand -base64 32)|g" /data/coolify/source/.env
+
+    - name: Generate random DB_PASSWORD
+      shell: sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$(openssl rand -base64 24)|g" /data/coolify/source/.env
+
+    - name: Generate random REDIS_PASSWORD
+      shell: sed -i "s|REDIS_PASSWORD=.*|REDIS_PASSWORD=$(openssl rand -base64 24)|g" /data/coolify/source/.env
+
+    - name: Generate random PUSHER_APP_ID
+      shell: sed -i "s|PUSHER_APP_ID=.*|PUSHER_APP_ID=$(openssl rand -hex 16)|g" /data/coolify/source/.env
+
+    - name: Generate random PUSHER_APP_KEY
+      shell: sed -i "s|PUSHER_APP_KEY=.*|PUSHER_APP_KEY=$(openssl rand -base64 24)|g" /data/coolify/source/.env
+
+    - name: Generate random PUSHER_APP_SECRET
+      shell: sed -i "s|PUSHER_APP_SECRET=.*|PUSHER_APP_SECRET=$(openssl rand -base64 24)|g" /data/coolify/source/.env
+  when: not coolify_env_stat.stat.exists
+
+- name: Copy docker-compose configurations to target server
+  copy:
+    src: "{{ playbook_dir }}/../docker/"
+    dest: "{{ docker_base_dir }}/"
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0755'
+
+

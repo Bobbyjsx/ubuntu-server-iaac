@@ -1,15 +1,19 @@
 ---
 - name: Download Tailscale official GPG key
   get_url:
-    url: "https://pkgs.tailscale.com/stable/ubuntu/{{ ansible_distribution_release }}.noarmor.gpg"
+    url: "https://pkgs.tailscale.com/stable/ubuntu/{{ ansible_facts['distribution_release'] }}.noarmor.gpg"
     dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
     mode: '0644'
 
 - name: Add Tailscale APT repository
-  apt_repository:
-    repo: "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu {{ ansible_distribution_release }} main"
+  deb822_repository:
+    name: tailscale
+    types: deb
+    uris: https://pkgs.tailscale.com/stable/ubuntu
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: main
+    signed_by: /usr/share/keyrings/tailscale-archive-keyring.gpg
     state: present
-    filename: tailscale
 
 - name: Install Tailscale
   apt:

@@ -69,3 +69,25 @@ graph TD
 2. **Tailnet Zone:** Users connected to the Tailscale VPN have access to the server. The UFW firewall permits all traffic originating from the `tailscale0` network interface.
 3. **Loopback Zone (`127.0.0.1`):** High-privilege admin dashboards (Portainer, Coolify, Prometheus, Grafana) bind their ports specifically to localhost. They are not exposed to the Tailscale subnet directly, requiring an SSH tunnel or a reverse proxy. This prevents accidental exposure within the Tailnet.
 4. **Docker Network Isolation:** Docker networks are separated by stack (`monitoring-net`, `homelab-net`, `coolify`). Containers on `monitoring-net` cannot access `homelab-net` databases directly, minimizing the blast radius in the event of a container compromise.
+
+---
+
+## Configuration & Tooling Architecture
+
+The provisioning and orchestration tooling utilizes a workstation-to-server deployment flow controlled entirely by local environment variables and a Makefile:
+
+```mermaid
+graph LR
+    Env[.env File] -->|Feeds| Make[Makefile]
+    Make -->|Triggers| Bootstrap[Bootstrap Script]
+    Env -->|Loads into environment| Bootstrap
+    Bootstrap -->|Generates| Inv[inventory.ini]
+    Bootstrap -->|Executes| Ansible[Ansible Playbook]
+    Inv -->|Targets| Remote[Remote Target Server]
+    Ansible -->|Provisions| Remote
+```
+
+1. **Environment Variables (.env):** All target server parameters (IP address, SSH connection username, SSH key path, and optional Tailscale auth keys) are declared in a local, Git-ignored `.env` file. This centralizes configurations and prevents committing credentials.
+2. **Makefile Entry Point:** Serves as a standard, vendor-neutral interface for administrators to execute common tasks (`make setup`, `make bootstrap`, `make ssh`).
+3. **Dynamic Inventory Generation:** To avoid maintaining duplicate settings, the bootstrap script reads the `.env` variables and dynamically writes out the `inventory.ini` file before calling `ansible-playbook`.
+4. **Adaptive Privilege Escalation:** The provisioning script detects whether the target connection user is `root`. If it is, the script disables the `--ask-become-pass` flag and avoids prompting for a sudo password, optimizing the connection workflow for root-only setups.
