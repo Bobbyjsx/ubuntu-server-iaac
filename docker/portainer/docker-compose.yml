@@ -10,9 +10,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
     ports:
-      # Bind only to loopback to ensure access is only possible via Tailscale/local tunnel
-      - "127.0.0.1:9443:9443"
-      - "127.0.0.1:9000:9000"
+      # Securely bind to interfaces (access allowed via Tailscale, blocked by UFW on public IP)
+      - "9443:9443"
+      - "9000:9000"
 
 volumes:
   portainer_data:

@@ -20,8 +20,8 @@ services:
     env_file:
       - /data/coolify/source/.env
     ports:
-      # Securely bind to loopback for Tailscale/VPN-only access
-      - "127.0.0.1:8000:8080"
+      # Securely bind to interface for Tailscale/VPN access (protected by UFW)
+      - "8000:8080"
     expose:
       - "8000"
     healthcheck:

@@ -31,6 +31,10 @@
       - software-properties-common
       - python3-pip
       - python3-docker
+      - zsh
+      - zsh-syntax-highlighting
+      - zsh-autosuggestions
+      - zoxide
     state: present
 
 - name: Create docker base directory structure
@@ -52,3 +56,108 @@
     - "{{ docker_base_dir }}/monitoring/prometheus"
     - "{{ docker_base_dir }}/monitoring/grafana"
     - "{{ docker_base_dir }}/monitoring/grafana/data"
+
+- name: Check if Oh My Zsh is installed
+  stat:
+    path: "{{ '/root' if target_user == 'root' else '/home/' ~ target_user }}/.oh-my-zsh"
+  register: omz_stat
+
+- name: Install Oh My Zsh
+  git:
+    repo: https://github.com/ohmyzsh/ohmyzsh.git
+    dest: "{{ '/root' if target_user == 'root' else '/home/' ~ target_user }}/.oh-my-zsh"
+    depth: 1
+  when: not omz_stat.stat.exists
+
+- name: Set Oh My Zsh ownership
+  file:
+    path: "{{ '/root' if target_user == 'root' else '/home/' ~ target_user }}/.oh-my-zsh"
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    recurse: yes
+  when: not omz_stat.stat.exists
+
+- name: Create custom Oh My Zsh theme with user@host prefix
+  copy:
+    dest: "{{ '/root' if target_user == 'root' else '/home/' ~ target_user }}/.oh-my-zsh/custom/themes/custom-robbyrussell.zsh-theme"
+    content: |
+      PROMPT="%(?:%{$fg_bold[green]%}➜ :%{$fg_bold[red]%}➜ ) %{$fg[green]%}%n@%m%{$reset_color%}:%{$fg[cyan]%}%c%{$reset_color%} \$(git_prompt_info)"
+      ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg_bold[blue]%}git:(%{$fg[red]%}"
+      ZSH_THEME_GIT_PROMPT_SUFFIX="%{$fg_bold[blue]%})%{$reset_color%} "
+      ZSH_THEME_GIT_PROMPT_DIRTY="%{$fg[yellow]%}✗%{$reset_color%}"
+      ZSH_THEME_GIT_PROMPT_CLEAN=""
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0644'
+
+- name: Configure .zshrc for target user
+  blockinfile:
+    path: "{{ '/root' if target_user == 'root' else '/home/' ~ target_user }}/.zshrc"
+    create: yes
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0644'
+    marker: "# {mark} ANSIBLE MANAGED ZSH CONFIGURATION"
+    block: |
+      # ----------------------------------
+      # Oh My Zsh Configuration
+      # ----------------------------------
+      export ZSH="$HOME/.oh-my-zsh"
+      ZSH_THEME="custom-robbyrussell"
+
+      # Plugins to enable inside Oh My Zsh
+      plugins=(git)
+
+      source $ZSH/oh-my-zsh.sh
+
+      # ----------------------------------
+      # Zsh History Configuration
+      # ----------------------------------
+      HISTFILE=~/.zsh_history
+      HISTSIZE=10000
+      SAVEHIST=10000
+      setopt appendhistory
+      setopt sharehistory
+      setopt hist_ignore_all_dups
+      setopt hist_save_no_dups
+      setopt hist_find_no_dups
+
+      # ----------------------------------
+      # General Settings
+      # ----------------------------------
+      CASE_SENSITIVE="true"
+      HYPHEN_INSENSITIVE="true"
+      ENABLE_CORRECTION="true"
+      COMPLETION_WAITING_DOTS="true"
+      export LANG="en_US.UTF-8"
+
+      # ----------------------------------
+      # Aliases
+      # ----------------------------------
+      alias cd="z" # Use zoxide for navigation
+      alias zshconfig="vim ~/.zshrc" # Quick access to this file
+      alias k="clear" # Clear Terminal
+      alias py="python3"
+      alias venv="source .venv/bin/activate" # Activate virtual env in a dir
+      alias gut='branch=$(git branch --show-current) && echo "Current branch: $branch" && git push --set-upstream origin $branch'
+
+      # ----------------------------------
+      # Plugins and Integrations
+      # ----------------------------------
+      # Zoxide
+      if command -v zoxide &> /dev/null; then
+        eval "$(zoxide init zsh)"
+      fi
+
+      # Syntax Highlighting (installed via apt)
+      if [ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
+        source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+      fi
+
+      # Autosuggestions (installed via apt)
+      if [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
+        source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+      fi
+
+
+
