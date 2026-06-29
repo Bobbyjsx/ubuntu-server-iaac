@@ -7,11 +7,11 @@
     state: present
   notify: Restart sshd
 
-- name: Ensure SSH root login is disabled
+- name: Configure SSH root login
   lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?PermitRootLogin'
-    line: 'PermitRootLogin no'
+    line: 'PermitRootLogin prohibit-password'
     state: present
   notify: Restart sshd
 
@@ -58,6 +58,21 @@
     proto: tcp
     comment: "Allow SSH bootstrap port"
 
+- name: Allow incoming HTTP traffic for Nginx Proxy Manager
+  ufw:
+    rule: allow
+    port: '80'
+    proto: tcp
+    comment: "Allow HTTP reverse proxy"
+
+- name: Allow incoming HTTPS traffic for Nginx Proxy Manager
+  ufw:
+    rule: allow
+    port: '443'
+    proto: tcp
+    comment: "Allow HTTPS reverse proxy"
+
+
 - name: Allow all traffic on Tailscale interface (tailscale0)
   ufw:
     rule: allow
@@ -65,6 +80,11 @@
     direction: in
     comment: "Allow full trust on Tailscale interface"
 
+- name: Allow all traffic from Docker network subnets
+  ufw:
+    rule: allow
+    src: '172.16.0.0/12'
+    comment: "Allow Docker network traffic"
 
 - name: Enable UFW firewall
   ufw:

@@ -57,8 +57,8 @@
   file:
     path: "{{ item }}"
     state: directory
-    owner: "{{ target_user }}"
-    group: "{{ target_user }}"
+    owner: "9999"
+    group: "9999"
     mode: '0755'
   loop:
     - /data/coolify
@@ -80,8 +80,8 @@
       get_url:
         url: https://cdn.coollabs.io/coolify/.env.production
         dest: /data/coolify/source/.env
-        owner: "{{ target_user }}"
-        group: "{{ target_user }}"
+        owner: "9999"
+        group: "9999"
         mode: '0600'
 
     - name: Generate random APP_ID
@@ -113,5 +113,15 @@
     owner: "{{ target_user }}"
     group: "{{ target_user }}"
     mode: '0755'
+
+- name: Create symlink for Coolify .env
+  file:
+    src: /data/coolify/source/.env
+    dest: "{{ docker_base_dir }}/coolify/.env"
+    state: link
+    force: yes
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+
 
 

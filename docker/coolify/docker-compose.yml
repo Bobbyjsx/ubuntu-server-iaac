@@ -49,6 +49,8 @@ services:
       POSTGRES_USER: ${DB_USERNAME:-coolify}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-coolify_secure_pass}
       POSTGRES_DB: ${DB_DATABASE:-coolify}
+    env_file:
+      - /data/coolify/source/.env
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-coolify} -d ${DB_DATABASE:-coolify}"]
       interval: 5s
@@ -64,6 +66,8 @@ services:
     command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD:-coolify_redis_secure_pass}
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-coolify_redis_secure_pass}
+    env_file:
+      - /data/coolify/source/.env
     volumes:
       - coolify-redis-data:/data
     healthcheck:
@@ -92,6 +96,8 @@ services:
       SOKETI_DEFAULT_APP_KEY: "${PUSHER_APP_KEY:-coolify}"
       SOKETI_DEFAULT_APP_SECRET: "${PUSHER_APP_SECRET:-coolify}"
       SOKETI_HOST: "0.0.0.0"
+    env_file:
+      - /data/coolify/source/.env
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:6001/ready && wget -qO- http://127.0.0.1:6002/ready || exit 1"]
       interval: 10s
